@@ -1,6 +1,6 @@
 llm:
   base_url: https://integrate.api.nvidia.com/v1
-  api_key: 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
+  api_key: x
   model: deepseek-ai/deepseek-v4-flash
   temperature: 0.7
   max_tokens: 120
