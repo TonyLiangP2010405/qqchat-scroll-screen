@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QQ聊天机器人管理页面</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>QQ聊天机器人</h1>
+            <div class="status-bar">
+                <span id="status-indicator" class="status-dot running"></span>
+                <span id="status-text">运行中</span>
+                <span id="window-status">QQ窗口: 检测中...</span>
+            </div>
+        </header>
+
+        <nav class="tab-nav">
+            <button class="tab-btn active" data-tab="control">运行控制</button>
+            <button class="tab-btn" data-tab="config">配置管理</button>
+            <button class="tab-btn" data-tab="messages">聊天记录</button>
+            <button class="tab-btn" data-tab="memory">记忆管理</button>
+            <button class="tab-btn" data-tab="logs">运行日志</button>
+        </nav>
+
+        <main>
+            <!-- 运行控制页 -->
+            <section id="tab-control" class="tab-content active">
+                <div class="card">
+                    <h2>运行状态</h2>
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <span class="status-label">自动回复</span>
+                            <span id="control-auto-reply" class="status-value">运行中</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">QQ窗口</span>
+                            <span id="control-qq-window" class="status-value">检测中</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">已处理消息</span>
+                            <span id="control-msg-count" class="status-value">0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">最后回复</span>
+                            <span id="control-last-reply" class="status-value">-</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">运行模式</span>
+                            <span id="control-mode" class="status-value">自动窗口</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>控制按钮</h2>
+                    <div class="control-buttons">
+                        <button id="btn-pause" class="btn btn-warning">暂停自动回复</button>
+                        <button id="btn-resume" class="btn btn-success" style="display:none">恢复自动回复</button>
+                        <button id="btn-set-region" class="btn btn-primary">设置区域</button>
+                        <button id="btn-test-api" class="btn btn-info">测试API连接</button>
+                        <button id="btn-switch-desktop" class="btn btn-secondary">切换到QQ桌面</button>
+                        <button id="btn-clear-history" class="btn btn-danger">清空历史记录</button>
+                    </div>
+                    <div id="test-api-result" class="api-test-result" style="display:none"></div>
+                </div>
+
+                <div class="card">
+                    <h2>手动发送</h2>
+                    <div class="manual-send">
+                        <input type="text" id="manual-input" placeholder="输入消息手动发送到QQ...">
+                        <button id="btn-send" class="btn btn-primary">发送</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>实时消息流</h2>
+                    <div id="message-stream" class="message-stream">
+                        <div class="empty-tip">等待消息...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 配置管理页 -->
+            <section id="tab-config" class="tab-content">
+                <div class="card">
+                    <h2>大模型配置</h2>
+                    <div class="config-form">
+                        <div class="form-group">
+                            <label>API地址 (Base URL)</label>
+                            <input type="text" id="config-base-url" placeholder="https://api.deepseek.com/v1">
+                            <small class="form-hint">支持DeepSeek、通义千问、智谱等OpenAI兼容格式API</small>
+                        </div>
+                        <div class="form-group">
+                            <label>API密钥</label>
+                            <input type="password" id="config-api-key" placeholder="sk-xxxxxxxx">
+                            <small class="form-hint">你的API Key，保存后会自动生效</small>
+                        </div>
+                        <div class="form-group">
+                            <label>模型名称</label>
+                            <input type="text" id="config-model" placeholder="deepseek-chat">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>温度 (Temperature)</label>
+                                <input type="number" id="config-temperature" value="0.7" min="0" max="2" step="0.1">
+                                <small class="form-hint">0-2，越大越有创意</small>
+                            </div>
+                            <div class="form-group">
+                                <label>最大Token数</label>
+                                <input type="number" id="config-max-tokens" value="500" min="50" max="4000" step="50">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>机器人设定</h2>
+                    <div class="config-form">
+                        <div class="form-group">
+                            <label>机器人昵称</label>
+                            <input type="text" id="config-bot-name" placeholder="小助手">
+                            <small class="form-hint">群里的昵称，用于过滤自己发送的消息</small>
+                        </div>
+                        <div class="form-group">
+                            <label>人设 / 系统提示词</label>
+                            <textarea id="config-system-prompt" rows="5" placeholder="输入机器人的角色设定..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>截图与识别</h2>
+                    <div class="config-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>截图间隔 (秒)</label>
+                                <input type="number" id="config-interval" value="10" min="1" max="300">
+                            </div>
+                            <div class="form-group">
+                                <label>消息区域比例</label>
+                                <input type="number" id="config-area-ratio" value="0.7" min="0.3" max="1" step="0.1">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="config-debug-screenshots">
+                                    <span>保存调试截图</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>过滤与记忆</h2>
+                    <div class="config-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="config-ignore-my-msg" checked>
+                                    <span>忽略自己发送的消息</span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="config-memory-enabled" checked>
+                                    <span>开启聊天记录保存</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>最大历史消息数</label>
+                                <input type="number" id="config-max-history" value="10" min="1" max="50">
+                            </div>
+                            <div class="form-group">
+                                <label>加载近期记忆数</label>
+                                <input type="number" id="config-load-recent" value="20" min="0" max="100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>保存</h2>
+                    <div class="config-form">
+                        <button id="btn-save-config" class="btn btn-primary btn-lg">保存所有配置</button>
+                        <small class="form-hint">保存后约5秒自动生效，无需重启程序</small>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 聊天记录页 -->
+            <section id="tab-messages" class="tab-content">
+                <div class="card">
+                    <h2>聊天记录浏览</h2>
+                    <div class="filter-bar">
+                        <select id="date-select">
+                            <option value="">今天</option>
+                        </select>
+                        <input type="text" id="search-input" placeholder="搜索关键词...">
+                        <button id="btn-search" class="btn btn-secondary">搜索</button>
+                        <button id="btn-export" class="btn btn-secondary">导出JSON</button>
+                        <button id="btn-refresh-messages" class="btn btn-secondary">刷新</button>
+                    </div>
+                    <div id="history-list" class="history-list">
+                        <div class="empty-tip">暂无记录</div>
+                    </div>
+                    <div class="pagination">
+                        <button id="btn-prev" class="btn btn-sm">上一页</button>
+                        <span id="page-info">第 1 页</span>
+                        <button id="btn-next" class="btn btn-sm">下一页</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 记忆管理页 -->
+            <section id="tab-memory" class="tab-content">
+                <div class="card">
+                    <h2>记忆管理</h2>
+                    <p class="section-desc">查看和编辑保存的聊天记录记忆，这些内容会作为大模型的上下文</p>
+                    <div id="memory-list" class="history-list">
+                        <div class="empty-tip">暂无记忆记录</div>
+                    </div>
+                    <div class="memory-actions">
+                        <button id="btn-load-memory" class="btn btn-secondary">加载近期记忆</button>
+                        <button id="btn-clear-memory" class="btn btn-danger">清空所有记忆</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 运行日志页 -->
+            <section id="tab-logs" class="tab-content">
+                <div class="card">
+                    <h2>运行日志</h2>
+                    <div class="log-actions">
+                        <button id="btn-refresh-logs" class="btn btn-secondary">刷新日志</button>
+                        <button id="btn-clear-logs" class="btn btn-secondary">清空显示</button>
+                        <button id="btn-download-log" class="btn btn-secondary">下载日志文件</button>
+                    </div>
+                    <div id="log-container" class="log-container">
+                        <div class="empty-tip">点击刷新加载日志</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <!-- 区域设置模态框 -->
+    <div id="region-modal" class="modal" style="display:none">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>设置截图区域</h2>
+                <button id="btn-close-region" class="btn-close">x</button>
+            </div>
+            <div class="modal-body">
+                <div id="region-step-bar" class="step-bar">
+                    <div class="step active" data-step="1">1. 划定消息区域</div>
+                    <div class="step" data-step="2">2. 点击输入框</div>
+                    <div class="step" data-step="3">3. 确认保存</div>
+                </div>
+                <p id="region-instruction" class="region-instruction">正在截取屏幕，请稍候...</p>
+                <div id="region-screenshot-container" class="screenshot-container">
+                    <img id="region-screenshot" src="" alt="屏幕截图" style="display:none; max-width:100%; cursor:crosshair;">
+                    <div id="region-overlay" class="region-overlay"></div>
+                </div>
+                <div id="region-preview" class="region-preview" style="display:none">
+                    <p><strong>消息区域:</strong> <span id="preview-read-rect">未设置</span></p>
+                    <p><strong>回复位置:</strong> <span id="preview-reply-pos">未设置</span></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-region-reset" class="btn btn-secondary" style="display:none">重新选择</button>
+                <button id="btn-region-save" class="btn btn-primary" style="display:none">保存并应用</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
